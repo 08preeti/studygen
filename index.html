@@ -247,11 +247,12 @@ searchBtn.addEventListener("click", async () => {
   searchResults.innerHTML = `<span class="loading-dots">Searching</span>`;
 
   try {
-    const resp = await fetch("http://localhost:5000/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: q })
-    });
+    const res = await fetch("https://studygen-backend.onrender.com/api/generate", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ subject, topics, time }),
+});
+
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
