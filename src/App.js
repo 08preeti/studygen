@@ -1,5 +1,9 @@
 import logo from './logo.svg';
 import './App.css';
+import SearchInfo from "./components/SearchInfo";
+
+// …inside your JSX layout where the “Search Info Online” card appears:
+<SearchInfo />
 
 function App() {
   return (
