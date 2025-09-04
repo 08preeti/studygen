@@ -33,8 +33,11 @@
       </nav>
 
       <div class="header-actions">
-        <button class="cta ghost" type="button">Sign in</button>
+        <button id="signInBtn" class="cta ghost" type="button">Sign in</button>
+        <button id="signOutBtn" class="cta ghost" type="button" style="display:none;">Sign out</button>
         <button id="darkModeToggle" class="cta ghost" type="button" aria-label="Toggle dark mode">🌙</button>
+        <span id="userInfo" style="margin-left:1rem; font-weight:600;"></span>
+
       </div>
     </div>
   </header>
@@ -183,9 +186,9 @@
   </footer>
 
   <!-- Scripts -->
-  <script>
+  <script type="module">
+    import { auth, provider, signInWithPopup, signOut } from "./src/firebase.js";
     const API_URL = "https://studygen-api.onrender.com"; // ✅ your Render backend
-
     // --- Guide Generator ---
     const form = document.getElementById("guideForm");
     const outputBox = document.getElementById("guideOutput");
@@ -339,6 +342,56 @@
       notesOutput.textContent = "No notes yet...";
       toast("🗑 Notes cleared!");
     });
-  </script>
+
+
+  // --- Google Sign-In ---
+    const signInBtn = document.getElementById("signInBtn");
+    const signOutBtn = document.getElementById("signOutBtn");
+    const userInfo = document.getElementById("userInfo");
+
+    signInBtn.addEventListener("click", async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        userInfo.textContent = `👋 Hello, ${user.displayName}`;
+        signInBtn.style.display = "none";
+        signOutBtn.style.display = "inline-block";
+        localStorage.setItem("user", JSON.stringify(user));
+      } catch (error) {
+        console.error("Login failed", error);
+      }
+    });
+
+    signOutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        userInfo.textContent = "";
+        signInBtn.style.display = "inline-block";
+        signOutBtn.style.display = "none";
+        localStorage.removeItem("user");
+      } catch (error) {
+        console.error("Logout failed", error);
+      }
+    });
+
+    // --- Toast helper ---
+    function toast(msg) {
+      const t = document.createElement("div");
+      t.textContent = msg;
+      t.style.position = "fixed";
+      t.style.bottom = "20px";
+      t.style.left = "50%";
+      t.style.transform = "translateX(-50%)";
+      t.style.background = "rgba(0,0,0,0.8)";
+      t.style.color = "#fff";
+      t.style.padding = "8px 12px";
+      t.style.borderRadius = "8px";
+      t.style.zIndex = "9999";
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1200);
+    }
+</script>
 </body>
 </html>
+
+
