@@ -142,40 +142,39 @@
     </section>
 
     <!-- Internet Search Notes -->
-<section id="internetNotes" class="builder container" style="margin-top:1.5rem;">
-  <div class="builder-head">
-    <h2>🌐 Search Info Online</h2>
-    <p class="muted">Quickly fetch a concise summary from Wikipedia.</p>
-  </div>
+    <section id="internetNotes" class="builder container" style="margin-top:1.5rem;">
+      <div class="builder-head">
+        <h2>🌐 Search Info Online</h2>
+        <p class="muted">Quickly fetch a concise summary from Wikipedia.</p>
+      </div>
 
-  <div style="display:flex; gap:0.6rem; align-items:center; margin-bottom:0.75rem;">
-    <input id="searchQuery" type="text" placeholder="Enter topic (e.g. Photosynthesis)" style="flex:1; padding:.7rem; border-radius:8px; border:1px solid #ccc;">
-    <button id="searchBtn" class="cta primary" type="button">🔍 Search</button>
-  </div>
+      <div style="display:flex; gap:0.6rem; align-items:center; margin-bottom:0.75rem;">
+        <input id="searchQuery" type="text" placeholder="Enter topic (e.g. Photosynthesis)" style="flex:1; padding:.7rem; border-radius:8px; border:1px solid #ccc;">
+        <button id="searchBtn" class="cta primary" type="button">🔍 Search</button>
+      </div>
 
-  <div id="searchResults" class="output-box">No results yet...</div>
-</section>
+      <div id="searchResults" class="output-box">No results yet...</div>
+    </section>
 
     <!-- Notes Section -->
-<section id="notes" class="builder container">
-  <div class="builder-head">
-    <h2>Your Notes</h2>
-    <p class="muted">Write down your own study notes ✍️</p>
-  </div>
+    <section id="notes" class="builder container">
+      <div class="builder-head">
+        <h2>Your Notes</h2>
+        <p class="muted">Write down your own study notes ✍️</p>
+      </div>
 
-  <textarea id="notesInput" placeholder="Type your notes here..." rows="8"></textarea>
+      <textarea id="notesInput" placeholder="Type your notes here..." rows="8"></textarea>
 
-  <div class="actions">
-    <button id="saveNotesBtn" class="cta primary" type="button">💾 Save Notes</button>
-    <button id="clearNotesBtn" class="cta ghost" type="button">🗑 Clear</button>
-  </div>
+      <div class="actions">
+        <button id="saveNotesBtn" class="cta primary" type="button">💾 Save Notes</button>
+        <button id="clearNotesBtn" class="cta ghost" type="button">🗑 Clear</button>
+      </div>
 
-  <div class="saved-notes">
-    <h3>📑 Saved Notes</h3>
-    <div id="notesOutput" class="output-box">No notes yet...</div>
-  </div>
-</section>
-
+      <div class="saved-notes">
+        <h3>📑 Saved Notes</h3>
+        <div id="notesOutput" class="output-box">No notes yet...</div>
+      </div>
+    </section>
   </main>
 
   <!-- Footer -->
@@ -185,6 +184,9 @@
 
   <!-- Scripts -->
   <script>
+    const API_URL = "https://studygen-api.onrender.com"; // ✅ your Render backend
+
+    // --- Guide Generator ---
     const form = document.getElementById("guideForm");
     const outputBox = document.getElementById("guideOutput");
 
@@ -195,10 +197,10 @@
       const topics = document.getElementById("topics").value;
       const time = document.getElementById("time").value;
 
-      outputBox.innerHTML = `<span class="loading-dots">Generating</span>`;
+      outputBox.innerHTML = `<span class="loading-dots">Generating...</span>`;
 
       try {
-        const res = await fetch("http://localhost:5000/api/generate", {
+        const res = await fetch(`${API_URL}/api/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subject, topics, time }),
@@ -215,7 +217,7 @@
       }
     });
 
-    // Dark Mode Toggle
+    // --- Dark Mode Toggle ---
     const toggleBtn = document.getElementById("darkModeToggle");
     const body = document.body;
 
@@ -231,48 +233,40 @@
       localStorage.setItem("theme", isDark ? "dark" : "light");
     });
 
-    // Search (internet) -> calls backend /api/search
-const searchBtn = document.getElementById("searchBtn");
-const searchQuery = document.getElementById("searchQuery");
-const searchResults = document.getElementById("searchResults");
+    // --- Search Info Online ---
+    const searchBtn = document.getElementById("searchBtn");
+    const searchQuery = document.getElementById("searchQuery");
+    const searchResults = document.getElementById("searchResults");
 
-searchBtn.addEventListener("click", async () => {
-  const q = searchQuery.value.trim();
-  if (!q) {
-    toast("⚠️ Enter a topic to search");
-    return;
-  }
+    searchBtn.addEventListener("click", async () => {
+      const q = searchQuery.value.trim();
+      if (!q) {
+        toast("⚠️ Enter a topic to search");
+        return;
+      }
 
-  // small loading state
-  searchResults.innerHTML = `<span class="loading-dots">Searching</span>`;
+      searchResults.innerHTML = `<span class="loading-dots">Searching...</span>`;
 
-  try {
-    const res = await fetch("https://studygen-backend.onrender.com/api/generate", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ subject, topics, time }),
-});
+      try {
+        const res = await fetch(`${API_URL}/api/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: q }),
+        });
 
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      searchResults.textContent = err?.error || "❌ Failed to fetch information.";
-      return;
-    }
-
-    const data = await resp.json();
-    // compose markdown-like output (title + extract)
-    const md = `# ${data.title}\n\n${data.extract}`;
-    const html = DOMPurify.sanitize(marked.parse(md));
-    searchResults.innerHTML = html;
-    // also allow user to copy result quickly
-    toast("🔎 Result loaded");
-  } catch (err) {
-    console.error(err);
-    searchResults.textContent = "❌ Error fetching information.";
-  }
-});
-
+        const data = await res.json();
+        if (data.error) {
+          searchResults.textContent = "⚠️ " + data.error;
+        } else {
+          const md = `# ${data.title}\n\n${data.extract}`;
+          const html = DOMPurify.sanitize(marked.parse(md));
+          searchResults.innerHTML = html;
+        }
+      } catch (err) {
+        console.error(err);
+        searchResults.textContent = "❌ Error fetching information.";
+      }
+    });
 
     // --- Copy ---
     document.getElementById("copyBtn").addEventListener("click", async () => {
@@ -295,7 +289,7 @@ searchBtn.addEventListener("click", async () => {
       URL.revokeObjectURL(url);
     });
 
-    // --- Save as PDF (via browser print) ---
+    // --- Save as PDF ---
     document.getElementById("pdfBtn").addEventListener("click", () => {
       window.print();
     });
@@ -318,37 +312,33 @@ searchBtn.addEventListener("click", async () => {
     }
 
     // --- Notes Management ---
-const notesInput = document.getElementById("notesInput");
-const saveNotesBtn = document.getElementById("saveNotesBtn");
-const clearNotesBtn = document.getElementById("clearNotesBtn");
-const notesOutput = document.getElementById("notesOutput");
+    const notesInput = document.getElementById("notesInput");
+    const saveNotesBtn = document.getElementById("saveNotesBtn");
+    const clearNotesBtn = document.getElementById("clearNotesBtn");
+    const notesOutput = document.getElementById("notesOutput");
 
-// Load notes from localStorage when page loads
-window.addEventListener("DOMContentLoaded", () => {
-  const saved = localStorage.getItem("studyNotes");
-  if (saved) notesOutput.textContent = saved;
-});
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("studyNotes");
+      if (saved) notesOutput.textContent = saved;
+    });
 
-// Save notes
-saveNotesBtn.addEventListener("click", () => {
-  const text = notesInput.value.trim();
-  if (!text) {
-    toast("⚠️ Notes cannot be empty!");
-    return;
-  }
-  localStorage.setItem("studyNotes", text);
-  notesOutput.textContent = text;
-  notesInput.value = "";
-  toast("✅ Notes saved!");
-});
+    saveNotesBtn.addEventListener("click", () => {
+      const text = notesInput.value.trim();
+      if (!text) {
+        toast("⚠️ Notes cannot be empty!");
+        return;
+      }
+      localStorage.setItem("studyNotes", text);
+      notesOutput.textContent = text;
+      notesInput.value = "";
+      toast("✅ Notes saved!");
+    });
 
-// Clear notes
-clearNotesBtn.addEventListener("click", () => {
-  localStorage.removeItem("studyNotes");
-  notesOutput.textContent = "No notes yet...";
-  toast("🗑 Notes cleared!");
-});
-
+    clearNotesBtn.addEventListener("click", () => {
+      localStorage.removeItem("studyNotes");
+      notesOutput.textContent = "No notes yet...";
+      toast("🗑 Notes cleared!");
+    });
   </script>
 </body>
 </html>
